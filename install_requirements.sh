@@ -1,3 +1,49 @@
+# 选择使用的系统包管理器并判断是否具有root权限， 如果没有root权限，询问密码
+HAS_APT_GET=$(ls /usr/bin | grep apt-get)
+HAS_PACMAN=$(ls /usr/bin | grep pacman)
+if [ "$(id -u)" -eq 0 ]; then
+  if [ -n "$HAS_APT_GET" ]; then
+    echo "Use apt-get as package manager"
+    PACKAGE_MAN_CMDLINE="apt-get install -y"
+  elif [ -n "$HAS_PACMAN" ]; then
+    echo "Use pacman as package manager"
+    PACKAGE_MAN_CMDLINE="pacman -S --noconfirm"
+  fi
+else
+  echo -n "请输入密码: ";read -sr PASSWORD;echo ""
+  if [ -n "$HAS_APT_GET" ]; then
+    echo "Use apt-get as package manager"
+    PACKAGE_MAN_CMDLINE="echo '$PASSWORD' | sudo -S apt-get install -y"
+  elif [ -n "$HAS_PACMAN" ]; then
+    echo "Use pacman as package manager"
+    PACKAGE_MAN_CMDLINE="echo '$PASSWORD' | sudo -S pacman -S --noconfirm"
+  fi
+fi
+
+# 根据不同的包管理器设置安装的库名称
+if [ -n "$HAS_APT_GET" ]; then
+  LIB_TURBO_JPEG="libturbojpeg"
+  NINJA_BUILD="ninja-build"
+elif [ -n "$HAS_PACMAN" ]; then
+  LIB_TURBO_JPEG="libjpeg-turbo"
+  NINJA_BUILD="ninja"
+fi
+
+# 安装git库的函数，方便使用系统设置的proxy加速
+pip_with_git() {
+  TEMP_DIR=$(mktemp -d)
+  if [ -n "$TEMP_DIR" ]; then
+    pushd "$TEMP_DIR" || return 255
+    git clone $1 "$TEMP_DIR" || return 255
+    pip install . || return 255
+    popd || return 255
+    rm -rf "$TEMP_DIR"
+  else
+    echo "Cannot create temp dir"
+    return 255
+  fi
+}
+
 echo "****************** Installing pytorch ******************"
 conda install -y pytorch==1.7.0 torchvision==0.8.1 cudatoolkit=10.2 -c pytorch
 
@@ -39,7 +85,7 @@ pip install pycocotools
 echo ""
 echo ""
 echo "****************** Installing jpeg4py python wrapper ******************"
-apt-get install libturbojpeg
+eval "$PACKAGE_MAN_CMDLINE" "$LIB_TURBO_JPEG"
 pip install jpeg4py
 
 echo ""
@@ -55,7 +101,7 @@ pip install tikzplotlib
 echo ""
 echo ""
 echo "****************** Installing thop tool for FLOPs and Params computing ******************"
-pip install --upgrade git+https://github.com/Lyken17/pytorch-OpCounter.git
+pip_with_git https://github.com/Lyken17/pytorch-OpCounter
 
 echo ""
 echo ""
@@ -80,7 +126,7 @@ pip install visdom
 echo ""
 echo ""
 echo "****************** Installing vot-toolkit python ******************"
-pip install git+https://github.com/votchallenge/vot-toolkit-python
+pip_with_git https://github.com/votchallenge/vot-toolkit-python
 
 
 echo ""
@@ -94,6 +140,6 @@ pip install einops
 pip install thop
 
 echo "****************** Install ninja-build for Precise ROI pooling ******************"
-apt-get install ninja-build
+eval "$PACKAGE_MAN_CMDLINE" "$NINJA_BUILD"
 
 echo "****************** Installation complete! ******************"

@@ -2,6 +2,8 @@ import os
 import sys
 import argparse
 
+import cv2
+
 prj_path = os.path.join(os.path.dirname(__file__), '..')
 if prj_path not in sys.path:
     sys.path.append(prj_path)
@@ -17,7 +19,19 @@ def run_video(tracker_name, tracker_param, videofile='', optional_box=None, debu
         tracker_param: Name of parameter file.
         debug: Debug level.
     """
+    def selectROI() -> (int, int, int, int):
+        cap = cv2.VideoCapture(videofile)
+        ret, frame = cap.read()
+        if not ret:
+            assert False, f"Read first frame of {videofile} failed!"
+        ret = cv2.selectROI("select", frame)
+        if not ret:
+            assert False, "You have not select any roi area!"
+        return ret
+
     tracker = Tracker(tracker_name, tracker_param, "video", tracker_params=tracker_params)
+    if optional_box is None:
+        optional_box = list(selectROI())
     tracker.run_video(videofilepath=videofile, optional_box=optional_box, debug=debug, save_results=save_results)
 
 
