@@ -180,8 +180,8 @@ class Tracker:
         else:
             raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
 
-        assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
-        ", videofilepath must be a valid videofile"
+        # assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
+        # ", videofilepath must be a valid videofile"
 
         output_boxes = []
         cap = cv.VideoCapture(videofilepath)
@@ -242,7 +242,7 @@ class Tracker:
                        font_color, 1)
 
             # Display the resulting frame
-            # cv.imshow(display_name, frame_disp)
+            cv.imshow(display_name, frame_disp)
             key = cv.waitKey(1)
             if key == ord('q'):
                 break
@@ -266,7 +266,7 @@ class Tracker:
         if save_results:
             if not os.path.exists(self.results_dir):
                 os.makedirs(self.results_dir)
-            video_name = Path(videofilepath).stem
+            video_name = Path(str(videofilepath)).stem
             base_results_path = os.path.join(self.results_dir, 'video_{}'.format(video_name))
 
             tracked_bb = np.array(output_boxes).astype(int)

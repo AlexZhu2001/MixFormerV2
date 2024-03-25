@@ -29,6 +29,8 @@ def run_video(tracker_name, tracker_param, videofile='', optional_box=None, debu
             assert False, "You have not select any roi area!"
         return ret
 
+    if videofile.isdigit():
+        videofile = int(videofile)
     tracker = Tracker(tracker_name, tracker_param, "video", tracker_params=tracker_params)
     if optional_box is None:
         optional_box = list(selectROI())
